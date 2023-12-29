@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <title id="title">CSV Simple</title>
+    <meta content="#221F1F" name="theme-color">
+    <link rel="icon" href="favicon.svg">
+    <link rel="apple-touch-icon" href="https://i.imgur.com/YQuAKMD.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="CSV Simple" name="description">
+    <link rel='manifest' href='/manifest.json'/>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-MFFL3RW');</script>
+    <!-- End Google Tag Manager -->
+
+    <style>
+
+      @charset "UTF-8";
+
+      :root {
+        --bg: #221F1F;
+        --color: white;
+      }
+
+      body {
+        padding: 0;
+        margin: 0;
+        background: var(--bg);
+        color: var(--color);
+      }
+
+      main {
+        background: var(--bg);
+        color: var(--color);
+        position: relative;
+        padding-top: 40px;
+      }
+
+      table {
+        width: 100%;
+        position: relative;
+        z-index: 100;
+        border-spacing: 0;
+      }
+
+      tr:has(th) {
+        font-weight: bold;
+        position: sticky;
+        top: 2rem;
+        background-color: var(--bg);
+      }
+
+      td {
+        padding: 1%;
+        border-bottom: 1px solid currentColor;
+        border-right: 1px solid currentColor;
+      }
+
+      td:last-child {
+        border-right: none;
+      }
+
+      tr.hidden td {
+        display: none;
+      }
+
+      input[type="file"] {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        opacity: 0;
+        border: 5px dashed white;
+      }
+
+      input[type="search"] {
+        background: transparent;
+        border: 1px solid currentColor;
+        color: white;
+        border-radius: 55px;
+        padding: 5px 10px 5px 30px;
+        outline: none;
+      }
+
+      .toolbar {
+        position: fixed;
+        left: env(titlebar-area-x, 0);
+        top: env(titlebar-area-y, 0);
+        width: env(titlebar-area-width, 100%);
+        height: env(titlebar-area-height, 33px);
+        -webkit-app-region: drag;
+        app-region: drag;
+        z-index: 1000;
+        padding: 0 1%;
+        background: var(--bg);
+      }
+
+      .toolbar input {
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+        margin-top: 1%;
+        margin-left: 1%;
+      }
+
+      label {
+        cursor: pointer;
+      }
+
+      label.search {
+        position: relative;
+      }
+
+      label.search:before {
+        content: "🔍";
+        position: absolute;
+        top: 50%;
+        left: 10%;
+        transform: translateY(-50%);
+      }
+
+      .dropzone {
+        border: 5px dashed silver;
+        position: absolute;
+        pointer-events: none;
+        top: 40px;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        text-align: center;
+        padding-top: 50%;
+        font-size: 3rem;
+        transition: border-color .3s, color .3s;
+        color: silver;
+      }
+
+      #fileInput.drop + .dropzone {
+        border-color: blueviolet;
+        color: blueviolet;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #221F1F;
+        }
+      }
+
+
+    </style>
+    <script>
+
+      // This will parse a delimited string into an array of
+      // arrays. The default delimiter is the comma, but this
+      // can be overriden in the second argument.
+      function CSVToArray( strData, strDelimiter ){
+        // Check to see if the delimiter is defined. If not,
+        // then default to comma.
+        strDelimiter = (strDelimiter || ",");
+
+        // Create a regular expression to parse the CSV values.
+        var objPattern = new RegExp(
+          (
+            // Delimiters.
+            "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+
+            // Quoted fields.
+            "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+
+            // Standard fields.
+            "([^\"\\" + strDelimiter + "\\r\\n]*))"
+          ),
+          "gi"
+        );
+
+
+        // Create an array to hold our data. Give the array
+        // a default empty first row.
+        var arrData = [[]];
+
+        // Create an array to hold our individual pattern
+        // matching groups.
+        var arrMatches = null;
+
+
+        // Keep looping over the regular expression matches
+        // until we can no longer find a match.
+        while (arrMatches = objPattern.exec( strData )){
+
+          // Get the delimiter that was found.
+          var strMatchedDelimiter = arrMatches[ 1 ];
+
+          // Check to see if the given delimiter has a length
+          // (is not the start of string) and if it matches
+          // field delimiter. If id does not, then we know
+          // that this delimiter is a row delimiter.
+          if (
+            strMatchedDelimiter.length &&
+            (strMatchedDelimiter != strDelimiter)
+          ){
+
+            // Since we have reached a new row of data,
+            // add an empty row to our data array.
+            arrData.push( [] );
+
+          }
+
+
+          // Now that we have our delimiter out of the way,
+          // let's check to see which kind of value we
+          // captured (quoted or unquoted).
+          if (arrMatches[ 2 ]){
+
+            // We found a quoted value. When we capture
+            // this value, unescape any double quotes.
+            var strMatchedValue = arrMatches[ 2 ].replace(
+              new RegExp( "\"\"", "g" ),
+              "\""
+            );
+
+          } else {
+
+            // We found a non-quoted value.
+            var strMatchedValue = arrMatches[ 3 ];
+
+          }
+
+
+          // Now that we have our value string, let's add
+          // it to the data array.
+          arrData[ arrData.length - 1 ].push( strMatchedValue );
+        }
+
+        // Return the parsed data.
+        return( arrData );
+      }
+
+
+      const onDragOver = e => {
+        e.target.className = 'drop'
+      }
+
+
+      const onDragLeave = e => {
+        e.target.className = ''
+      }
+
+      const showCSV = (fileName, content) => {
+        window.title.innerHTML = fileName
+
+        const data = CSVToArray(content)
+        thead.innerHTML = data.shift().map(val => `<th>${val}</th>`).join('')
+        data.forEach(row => {
+          tr = document.createElement("tr")
+          row.forEach(val => {
+            tr.innerHTML = row.map(val => `<td>${val}</td>`).join('')
+          })
+          csv.appendChild(tr)
+        })
+        window.result = content
+      }
+
+      window.openFile = file => {
+        const reader = new FileReader();
+        reader.addEventListener('load', e => {
+          const { target: { result: csv } } = e
+          if (file.type !== 'text/csv') return alert('It is not CSV file')
+          showCSV(file.name, csv);
+        });
+        reader.readAsText(file);
+      }
+
+      window.search = (val) => {
+        trs = [...document.querySelectorAll("tbody tr")]
+        trs.forEach(tr => {
+          tr.classList.toggle("hidden", !tr.innerHTML.match(new RegExp(`.*${val}.*`, "i")))
+        })
+      }
+
+      async function handleFile(file) {
+        const blob = await file.getFile();
+        blob.handle = file;
+        const csv = await blob.text();
+        showCSV(file.name, csv);
+      }
+
+      if ('launchQueue' in window && 'files' in LaunchParams.prototype) {
+        launchQueue.setConsumer((launchParams) => {
+          if (!launchParams.files.length) return;
+          handleFile(launchParams.files[0])
+        });
+      }
+
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')
+
+    </script>
+    <link href="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@latest/sortable.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@latest/sortable.min.js"></script>
+  </head>
+  <body>
+    <section class="toolbar">
+      <label class="search">
+        <input type="search" placeholder="Search" oninput="search(this.value)" />
+      </label>
+      <label for="fileInput">📁 Open CSV</label>
+    </section>
+    <input
+      id="fileInput"
+      type="file"
+      accept=".csv"
+      onchange="window.openFile(this.files[0])"
+      ondragenter="onDragOver(event)"
+      ondragleave="onDragLeave(event)"
+      >
+    <label class='dropzone' for="fileInput">Drop File here</label>
+    <main id='main'>
+      <table class='sortable'>
+        <thead>
+          <tr id="thead"></tr>
+        </thead>
+        <tbody id="csv">
+
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>
+

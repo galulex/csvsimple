@@ -1,0 +1,38 @@
+{
+  "short_name": "CSV Simple",
+  "name": "",
+  "background_color": "#221F1F",
+  "theme_color": "#221F1F",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/DPkZDF4.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display_override": ["window-controls-overlay"],
+  "display": "standalone",
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "text/csv": [".csv"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "file",
+          "accept": [".csv"]
+        }
+      ]
+    }
+  }
+}
